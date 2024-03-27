@@ -1,0 +1,58 @@
+install.packages("Matrix")
+install.packages("arules")
+install.packages("arulesViz")
+install.packages("mvtnorm")
+install.packages("base64enc")
+install.packages("igraph")
+
+library(Matrix)
+library(arules)
+
+#1.Preliminary Work
+===================
+getwd()
+data = read.csv("movies-modified.csv", stringsAsFactors = FALSE)
+str(data)
+
+data.matrix = as.matrix(data[,3:20])
+data.trans = as(data.matrix, "transactions") # convert the binary incidence matrix into a transactions database
+inspect(data.trans)
+
+#2. Association Rule Mining
+
+
+rules = apriori(data.trans)
+inspect(head(sort(rules, by = "lift"), n = 6)) #inspect the first six rules, sorted by their lift
+inspect(sort(rules, by = "lift")) #inspect the rules, sorted by their lift
+
+rules = apriori(data.trans, parameter = list(supp = 0.001, conf = 0.1, target = "rules"))
+inspect(head(sort(rules, by = "lift"), n = 6)) #inspect the first six rules, sorted by their lift
+inspect(sort(rules, by = "lift")) #inspect the rules, sorted by their lift
+
+rules = apriori(data.trans, parameter = list(minlen=2, maxlen = 6, supp=0.001, conf=0.1, target ="rules"), appearance = list(rhs= c("Comedy","Romance"), default="lhs"), control = list(verbose=F))
+rules.sorted = sort(rules, by="lift")
+inspect(rules.sorted)
+
+#3. Pruning redundant rules
+
+#Find redundant rules
+subset.matrix = is.subset(rules.sorted, rules.sorted)
+subset.matrix[lower.tri(subset.matrix, diag=T)] = FALSE
+redundant = colSums(subset.matrix, na.rm=T) >= 1
+which(redundant)
+
+#Remove redundant rules
+rules.pruned = rules.sorted[!redundant]
+inspect(rules.pruned)
+
+#Visualizing Association Rules
+library(arulesViz)
+library(grid)
+
+plot(rules)
+plot(rules.pruned)
+plot(rules, method="graph", control=list(type="items"))
+plot(rules.pruned, method="graph", control=list(type="items"))
+plot(rules, method="paracoord", control=list(reorder=TRUE))
+plot(rules.pruned, method="grouped")
+
