@@ -1,0 +1,71 @@
+#R-Code for Clustering for Market Segmentation
+#----------------------------------------------
+The Dataset contains Airlines customer data with parameters like Bonus miles, total miles etc., which can be used to segment customers into different loyalty groups for future marketing strategies.
+install.packages("cluster")
+library(cluster)
+
+#1. Preliminary Work
+=======================
+
+getwd()
+
+data = read.csv("Airlines.csv")
+str(data)
+summary(data)
+data1 = scale(data)
+data1 = as.data.frame(data1)
+str(data1)
+summary(data1)
+sd(data1$BonusMiles)
+
+#2. Hierarchical Clustering
+============================
+library(cluster)
+
+#Hierarchical Clustering
+distances = dist(data1, method="euclidean")
+clusterdata = hclust(distances, method="ward.D")
+plot(clusterdata)
+clusterGroups = cutree(clusterdata, k=2)
+clusterGroups[10]
+data2 = cbind(data,clusterGroups)
+str(data2)
+
+table(data2$clusterGroups)
+tapply(data$Balance, clusterGroups, mean)
+tapply(data$QualMiles, clusterGroups, mean)
+tapply(data$BonusMiles, clusterGroups, mean)
+tapply(data$BonusTrans, clusterGroups, mean)
+tapply(data$FlightMiles, clusterGroups, mean)
+tapply(data$FlightTrans, clusterGroups, mean)
+tapply(data$DaysSinceEnroll, clusterGroups, mean)
+
+
+#3. K-Means Clustering
+==========================
+
+k=4
+set.seed(1000)
+data1 = scale(data)
+data1 = as.data.frame(data1)
+str(data1)
+KMC = kmeans(data1, centers=k, iter.max=1000)
+KMC
+KMC$cluster
+KMC$size
+KMC$centers
+KMC[[1]]
+data3 = cbind(data,KMC$cluster)
+str(data3)
+
+tapply(data3$Balance, KMC$cluster, mean)
+tapply(data3$QualMiles, KMC$cluster, mean)
+tapply(data3$BonusMiles, KMC$cluster, mean)
+tapply(data3$BonusTrans, KMC$cluster, mean)
+tapply(data3$FlightMiles, KMC$cluster, mean)
+tapply(data3$FlightTrans, KMC$cluster, mean)
+tapply(data3$DaysSinceEnroll, KMC$cluster, mean)
+
+
+plot(data[c("Balance","BonusMiles")], col = KMC$cluster)
+points(KMC$centers[,c("DaysSinceEnroll","BonusMiles")], col=1:3, pch=8, cex=2)
